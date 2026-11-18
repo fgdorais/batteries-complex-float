@@ -4,4 +4,7 @@ public import BatteriesComplexFloat.Basic
 public import BatteriesComplexFloat.Exp
 public import BatteriesComplexFloat.Float
 public import BatteriesComplexFloat.Inverse
+public import BatteriesComplexFloat.Lemmas.Basic
+public import BatteriesComplexFloat.Lemmas.Float
+public import BatteriesComplexFloat.Lemmas.SpecialValues
 public import BatteriesComplexFloat.Trig

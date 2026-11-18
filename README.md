@@ -66,6 +66,18 @@ this library, including `ldexp`, `exponent?`, `hypot`, `*` and `/`, is written w
 operations only and is exposed, so it can be reasoned about. The other functions are not
 exposed.
 
+- `BatteriesComplexFloat.Lemmas.Float` proves basic `Float` lemmas through the model:
+  `neg_neg`, `neg_mul`, `mul_neg`, `neg_div`, `div_neg`, `mul_comm` and `add_comm`.
+- `BatteriesComplexFloat.Lemmas.Basic` proves `ext`, `conj_conj`, `neg_neg`, `conj_neg` and
+  `mul_comm` for `ComplexFloat`.
+- `BatteriesComplexFloat.Lemmas.SpecialValues` proves Annex G special values of `*`, `/`, `abs`
+  and `proj` by evaluating the model in the kernel (`decide +kernel`), and that
+  `conj (z * w) = conj z * conj w` fails on a sign of zero.
+
+Identities such as `-(x + y) = -x + -y` are false in IEEE arithmetic (`x + (-x)` is `+0`), so
+the lemmas that hold are the sign-symmetric ones for `*` and `/` and the commutativity of `+`
+and `*`.
+
 ## Native package and testing
 
 The `native` directory holds a separate package, `batteries-complex-float-native`, with bindings
