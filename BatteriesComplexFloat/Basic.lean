@@ -53,6 +53,13 @@ public instance : OfNat ComplexFloat n := ⟨ofReal (OfNat.ofNat n)⟩
 public instance : OfScientific ComplexFloat where
   ofScientific m s e := ofReal (OfScientific.ofScientific m s e)
 
+/-- Decidable equality of both parts, where all NaNs are equal and `+0 ≠ -0`. -/
+public instance : DecidableEq ComplexFloat := fun z w =>
+  if h : z.re = w.re ∧ z.im = w.im then
+    isTrue (by cases z; cases w; simp_all)
+  else
+    isFalse (by intro e; subst e; exact h ⟨rfl, rfl⟩)
+
 /-- Componentwise IEEE equality: NaN parts are never equal, `+0` and `-0` are equal. -/
 public instance : BEq ComplexFloat where
   beq z w := z.re == w.re && z.im == w.im
@@ -83,29 +90,34 @@ public instance : BEq ComplexFloat where
   ⟨z.re - w.re, z.im - w.im⟩
 
 /--
+The operand recovery step of Annex G multiplication [C17, G.5.1, Example 1]: if `z` is infinite,
+its infinite parts become `±1` and its other parts `±0`; otherwise its NaN parts become `±0`.
+Signs are kept throughout.
+-/
+@[expose] public def recoverInf (z : ComplexFloat) : ComplexFloat :=
+  if z.isInf then
+    let box (u : Float) := Float.copySign (if u.isInf then 1 else 0) u
+    ⟨box z.re, box z.im⟩
+  else
+    let zero (u : Float) := if u.isNaN then Float.copySign 0 u else u
+    ⟨zero z.re, zero z.im⟩
+
+/--
 Multiplication, as in the reference implementation `_Cmultd` of [C17, G.5.1, Example 1]: the
-textbook formula, then recovery of infinite results when both parts come out NaN.
+textbook formula, then recovery of infinite results when both parts come out NaN. When an
+operand is infinite or an intermediate product overflows, both operands go through `recoverInf`
+and the textbook formula is applied again and multiplied by `inf`. This is a symmetric
+rearrangement of the case analysis in `_Cmultd`, which gives the same results.
 -/
 @[expose] public protected def mul (z w : ComplexFloat) : ComplexFloat :=
-  let a := z.re; let b := z.im; let c := w.re; let d := w.im
-  let ac := a * c; let bd := b * d; let ad := a * d; let bc := b * c
-  let x := ac - bd
-  let y := ad + bc
+  let x := z.re * w.re - z.im * w.im
+  let y := z.re * w.im + z.im * w.re
   if x.isNaN && y.isNaN then
-    -- Replace infinities by `±1` and NaNs by `±0`, then multiply by `inf`.
-    let box (u : Float) := Float.copySign (if u.isInf then 1 else 0) u
-    let zero (u : Float) := if u.isNaN then Float.copySign 0 u else u
-    let (a, b, c, d, recalc) :=
-      if a.isInf || b.isInf then
-        let a := box a; let b := box b; let c := zero c; let d := zero d
-        if c.isInf || d.isInf then (a, b, box c, box d, true) else (a, b, c, d, true)
-      else if c.isInf || d.isInf then
-        (zero a, zero b, box c, box d, true)
-      else if ac.isInf || bd.isInf || ad.isInf || bc.isInf then
-        -- Overflow in an intermediate product.
-        (zero a, zero b, zero c, zero d, true)
-      else (a, b, c, d, false)
-    if recalc then ⟨Float.inf * (a * c - b * d), Float.inf * (a * d + b * c)⟩
+    let overflow := (z.re * w.re).isInf || (z.im * w.im).isInf || (z.re * w.im).isInf
+      || (z.im * w.re).isInf
+    if z.isInf || w.isInf || overflow then
+      let z := z.recoverInf; let w := w.recoverInf
+      ⟨Float.inf * (z.re * w.re - z.im * w.im), Float.inf * (z.re * w.im + z.im * w.re)⟩
     else ⟨x, y⟩
   else ⟨x, y⟩
 
