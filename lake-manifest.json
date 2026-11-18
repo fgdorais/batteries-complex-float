@@ -11,6 +11,6 @@
    "inputRev": "nightly-testing",
    "inherited": false,
    "configFile": "lakefile.toml"}],
- "name": "«batteries-cell-test»",
+ "name": "«batteries-complex-float»",
  "lakeDir": ".lake",
  "fixedToolchain": false}
