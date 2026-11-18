@@ -49,7 +49,7 @@ Each module lists its references, and each docstring cites the ones its algorith
 - IEEE Std 754-2019, *IEEE Standard for Floating-Point Arithmetic*.
 - W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About Nothing's Sign Bit*,
   in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in Numerical Analysis*,
-  Clarendon Press, Oxford, 1987, pp. 165–211.
+  Clarendon Press, Oxford, 1987.
 - C. F. Borges, *Algorithm 1014: An Improved Algorithm for `hypot(x, y)`*, ACM Transactions on
   Mathematical Software 47 (2020), no. 1, Article 9, doi:10.1145/3428446.
 - D. Goldberg, *What Every Computer Scientist Should Know About Floating-Point Arithmetic*, ACM

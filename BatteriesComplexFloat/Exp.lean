@@ -18,7 +18,7 @@ The special values follow Annex G of the C standard [C17, G.6.3, G.6.4].
   Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
 * [Kahan1987] W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About
   Nothing's Sign Bit*, in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in
-  Numerical Analysis*, Clarendon Press, Oxford, 1987, pp. 165–211.
+  Numerical Analysis*, Clarendon Press, Oxford, 1987.
 * [FreeBSD] FreeBSD msun library: `lib/msun/src/k_exp.c` (`__ldexp_cexp`) and
   `lib/msun/src/s_ctanh.c`.
 * [Knuth1997] D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical

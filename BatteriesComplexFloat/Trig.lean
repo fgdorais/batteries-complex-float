@@ -21,7 +21,7 @@ the trigonometric functions are defined from them as in G.6:
 * [C23] ISO/IEC 9899:2024, *Information technology — Programming languages — C*, Annex G.
 * [Kahan1987] W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About
   Nothing's Sign Bit*, in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in
-  Numerical Analysis*, Clarendon Press, Oxford, 1987, pp. 165–211.
+  Numerical Analysis*, Clarendon Press, Oxford, 1987.
 * [FreeBSD] FreeBSD msun library: `lib/msun/src/k_exp.c` (`__ldexp_cexp`) and
   `lib/msun/src/s_ctanh.c`.
 -/

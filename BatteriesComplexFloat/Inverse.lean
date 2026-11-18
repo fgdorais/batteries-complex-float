@@ -21,7 +21,7 @@ the C standard does and respect signed zeros on them. The non-finite cases follo
   Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
 * [Kahan1987] W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About
   Nothing's Sign Bit*, in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in
-  Numerical Analysis*, Clarendon Press, Oxford, 1987, pp. 165–211.
+  Numerical Analysis*, Clarendon Press, Oxford, 1987.
 -/
 
 namespace ComplexFloat
