@@ -1,8 +1,12 @@
-name = "batteries-cell-test"
-defaultTargets = ["BatteriesCell"]
+name = "batteries-complex-float"
+defaultTargets = ["BatteriesComplexFloat", "BatteriesComplexFloatTest"]
 
 [[lean_lib]]
-name = "BatteriesCell"
+name = "BatteriesComplexFloat"
+
+[[lean_lib]]
+name = "BatteriesComplexFloatTest"
+globs = ["BatteriesComplexFloatTest.+"]
 
 [[require]]
 name = "batteries"
