@@ -40,6 +40,24 @@ rev = "main"
 - Lean's `Float` has a canonical NaN without sign or payload, so where Annex G leaves the sign of
   a result unspecified the choice can differ from a C library that propagates NaN signs.
 
+## References
+
+Each module lists its references, and each docstring cites the ones its algorithm follows:
+
+- ISO/IEC 9899:2018 (C17) and ISO/IEC 9899:2024 (C23), Annex G, *IEC 60559-compatible complex
+  arithmetic*.
+- IEEE Std 754-2019, *IEEE Standard for Floating-Point Arithmetic*.
+- W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About Nothing's Sign Bit*,
+  in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in Numerical Analysis*,
+  Clarendon Press, Oxford, 1987, pp. 165–211.
+- C. F. Borges, *Algorithm 1014: An Improved Algorithm for `hypot(x, y)`*, ACM Transactions on
+  Mathematical Software 47 (2020), no. 1, Article 9, doi:10.1145/3428446.
+- D. Goldberg, *What Every Computer Scientist Should Know About Floating-Point Arithmetic*, ACM
+  Computing Surveys 23 (1991), no. 1, 5–48.
+- D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical Algorithms*, 3rd ed.,
+  Addison-Wesley, 1997, §4.6.3.
+- FreeBSD msun (`k_exp.c`, `s_ctanh.c`) and musl libc (`scalbn.c`).
+
 ## Proofs
 
 Core arithmetic on `Float` (`+`, `-`, `*`, `/`, `sqrt`, `fma`, bit casts, comparisons) has a

@@ -21,6 +21,12 @@ Annex G of the C standard (IEC 60559-compatible complex arithmetic):
 * multiplication and division recover infinities: a product or quotient involving an infinite
   operand is infinite even when the textbook formula gives NaN in both parts;
 * division scales its operands so that it neither overflows nor underflows prematurely.
+
+## References
+
+* [C17] ISO/IEC 9899:2018, *Information technology — Programming languages — C*,
+  Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
+* [IEEE754] *IEEE Standard for Floating-Point Arithmetic*, IEEE Std 754-2019.
 -/
 
 /-- Complex numbers with `Float` real and imaginary parts. -/
@@ -77,8 +83,8 @@ public instance : BEq ComplexFloat where
   ⟨z.re - w.re, z.im - w.im⟩
 
 /--
-Multiplication, as in the reference implementation of Annex G (G.5.1): the textbook formula,
-then recovery of infinite results when both parts come out NaN.
+Multiplication, as in the reference implementation `_Cmultd` of [C17, G.5.1, Example 1]: the
+textbook formula, then recovery of infinite results when both parts come out NaN.
 -/
 @[expose] public protected def mul (z w : ComplexFloat) : ComplexFloat :=
   let a := z.re; let b := z.im; let c := w.re; let d := w.im
@@ -104,9 +110,10 @@ then recovery of infinite results when both parts come out NaN.
   else ⟨x, y⟩
 
 /--
-Division, as in the reference implementation of Annex G (G.5.2): the divisor is scaled by a
-power of two to avoid overflow and underflow, then infinite and zero results are recovered
-when both parts come out NaN.
+Division, as in the reference implementation `_Cdivd` of [C17, G.5.1, Example 2]: the divisor
+is scaled by a power of two to avoid overflow and underflow (with `exponent?` and `ldexp` in
+place of C's `logb` and `scalbn`), then infinite and zero results are recovered when both parts
+come out NaN.
 -/
 @[expose] public protected def div (z w : ComplexFloat) : ComplexFloat :=
   let a := z.re; let b := z.im; let c := w.re; let d := w.im
@@ -154,7 +161,8 @@ public instance : HDiv Float ComplexFloat ComplexFloat := ⟨fun x z => ComplexF
 
 /-! ## Absolute value and argument -/
 
-/-- The absolute value (modulus), without undue overflow or underflow. -/
+/-- The absolute value (modulus), without undue overflow or underflow (C's `cabs`, via
+`Float.hypot`). -/
 @[expose, inline] public def abs (z : ComplexFloat) : Float := Float.hypot z.re z.im
 
 /-- The squared absolute value `re * re + im * im`, which can overflow. -/
@@ -164,7 +172,7 @@ public instance : HDiv Float ComplexFloat ComplexFloat := ⟨fun x z => ComplexF
 @[expose, inline] public def arg (z : ComplexFloat) : Float := Float.atan2 z.im z.re
 
 /--
-Projection onto the Riemann sphere (C's `cproj`): every infinite number goes to
+Projection onto the Riemann sphere (C's `cproj`, [C17, 7.3.9.5]): every infinite number goes to
 `inf + I * (±0)`, keeping the sign of the imaginary part; other numbers are unchanged.
 -/
 @[expose] public def proj (z : ComplexFloat) : ComplexFloat :=

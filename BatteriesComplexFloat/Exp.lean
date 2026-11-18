@@ -10,12 +10,25 @@ public import BatteriesComplexFloat.Basic
 /-!
 # Exponential, logarithm, square root and powers
 
-The special values follow Annex G of the C standard (G.6.3, G.6.4).
+The special values follow Annex G of the C standard [C17, G.6.3, G.6.4].
+
+## References
+
+* [C17] ISO/IEC 9899:2018, *Information technology — Programming languages — C*,
+  Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
+* [Kahan1987] W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About
+  Nothing's Sign Bit*, in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in
+  Numerical Analysis*, Clarendon Press, Oxford, 1987, pp. 165–211.
+* [FreeBSD] FreeBSD msun library: `lib/msun/src/k_exp.c` (`__ldexp_cexp`) and
+  `lib/msun/src/s_ctanh.c`.
+* [Knuth1997] D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical
+  Algorithms*, 3rd ed., Addison-Wesley, 1997, §4.6.3.
 -/
 
 namespace ComplexFloat
 
-/-- The complex exponential. -/
+/-- The complex exponential, with the special values of [C17, G.6.3.1]. For real parts above
+`709`, where `exp` overflows, it uses `Float.mulExpLarge` as `cexp` does in [FreeBSD]. -/
 public protected def exp (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if y == 0 then ⟨Float.exp x, y⟩
@@ -32,7 +45,12 @@ public protected def exp (z : ComplexFloat) : ComplexFloat :=
     let r := Float.exp x
     ⟨r * Float.cos y, r * Float.sin y⟩
 
-/-- The principal logarithm, with branch cut along the negative real axis. -/
+/--
+The principal logarithm, with branch cut along the negative real axis and the special values
+of [C17, G.6.3.2]. The real part is `log |z|`, computed as `log1p ((a - 1) * (a + 1) + b * b) / 2`
+near the unit circle, by the identity `a² + b² = 1 + (a - 1) (a + 1) + b²`, and after scaling
+by `2 ^ 600` for tiny `|z|`. The imaginary part is `atan2 im re`.
+-/
 public protected def log (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   let re :=
@@ -53,7 +71,13 @@ public protected def log (z : ComplexFloat) : ComplexFloat :=
       else Float.log (Float.hypot a b)
   ⟨re, Float.atan2 y x⟩
 
-/-- The principal square root, with branch cut along the negative real axis. -/
+/--
+The principal square root, with branch cut along the negative real axis and the special values
+of [C17, G.6.4.2]. For finite `z = x + y I` it uses the formulas of `CSQRT` in [Kahan1987]:
+`t = √((|x| + |z|) / 2)`, then `t + y / (2t) I` when `x ≥ 0` and `|y| / (2t) ± t I` (with the
+sign of `y`) when `x < 0`, with `z` first scaled by a power of four away from overflow and
+underflow.
+-/
 public protected def sqrt (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if y.isInf then ⟨Float.inf, y⟩
@@ -77,13 +101,14 @@ public protected def sqrt (z : ComplexFloat) : ComplexFloat :=
     else ⟨y.abs / (2 * t) * s, Float.copySign (t * s) y⟩
 
 /-- The principal value of `z ^ w = exp (w * log z)`, with `z ^ 0 = 1` and `0 ^ w = 0` when
-`w` is real and positive. -/
+`w` is real and positive. Annex G leaves `cpow` loosely specified [C17, G.6.4.1]. -/
 public protected def pow (z w : ComplexFloat) : ComplexFloat :=
   if w.re == 0 && w.im == 0 then 1
   else if z.re == 0 && z.im == 0 && w.im == 0 && w.re > 0 then 0
   else ComplexFloat.exp (w * ComplexFloat.log z)
 
-/-- `z ^ n` for a natural number `n`, by repeated squaring. -/
+/-- `z ^ n` for a natural number `n`, by repeated squaring (the right-to-left binary method of
+[Knuth1997, §4.6.3, Algorithm A]). -/
 public def npow (z : ComplexFloat) (n : Nat) : ComplexFloat :=
   loop z n 1
 where

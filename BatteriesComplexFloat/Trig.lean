@@ -13,11 +13,23 @@ public import BatteriesComplexFloat.Basic
 The hyperbolic functions follow the special values of Annex G of the C standard (G.6.2), and
 the trigonometric functions are defined from them as in G.6:
 `sin z = -I * sinh (I * z)`, `cos z = cosh (I * z)` and `tan z = -I * tanh (I * z)`.
+
+## References
+
+* [C17] ISO/IEC 9899:2018, *Information technology — Programming languages — C*,
+  Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
+* [C23] ISO/IEC 9899:2024, *Information technology — Programming languages — C*, Annex G.
+* [Kahan1987] W. Kahan, *Branch Cuts for Complex Elementary Functions, or Much Ado About
+  Nothing's Sign Bit*, in A. Iserles and M. J. D. Powell (eds.), *The State of the Art in
+  Numerical Analysis*, Clarendon Press, Oxford, 1987, pp. 165–211.
+* [FreeBSD] FreeBSD msun library: `lib/msun/src/k_exp.c` (`__ldexp_cexp`) and
+  `lib/msun/src/s_ctanh.c`.
 -/
 
 namespace ComplexFloat
 
-/-- The complex hyperbolic sine. -/
+/-- The complex hyperbolic sine `sinh x cos y + cosh x sin y I`, with the special values of
+[C17, G.6.2.5], and `Float.mulExpLarge` for `|x| > 709` as in [FreeBSD]. -/
 public protected def sinh (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if y == 0 then ⟨Float.sinh x, y⟩
@@ -31,7 +43,8 @@ public protected def sinh (z : ComplexFloat) : ComplexFloat :=
       Float.mulExpLarge (Float.sin y) x.abs (-1)⟩
   else ⟨Float.sinh x * Float.cos y, Float.cosh x * Float.sin y⟩
 
-/-- The complex hyperbolic cosine. -/
+/-- The complex hyperbolic cosine `cosh x cos y + sinh x sin y I`, with the special values of
+[C17, G.6.2.4], and `Float.mulExpLarge` for `|x| > 709` as in [FreeBSD]. -/
 public protected def cosh (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if y == 0 then ⟨Float.cosh x, y * Float.copySign 1 x⟩
@@ -45,7 +58,14 @@ public protected def cosh (z : ComplexFloat) : ComplexFloat :=
       Float.copySign 1 x * Float.mulExpLarge (Float.sin y) x.abs (-1)⟩
   else ⟨Float.cosh x * Float.cos y, Float.sinh x * Float.sin y⟩
 
-/-- The complex hyperbolic tangent. -/
+/--
+The complex hyperbolic tangent, with the special values of [C17, G.6.2.6], except that
+`tanh (±0 + ∞ I) = ±0 + NaN I` as revised in [C23] (and as in glibc), where C17 gives
+`NaN + NaN I`. Finite arguments use Kahan's formula [Kahan1987]: with `t = tan y`,
+`β = 1 + t²`, `s = sinh x` and `ρ = √(1 + s²)`, the result is
+`(β ρ s + t I) / (1 + β s²)`. For `|x| > 22` it uses the asymptotic form of `ctanh` in
+[FreeBSD]: `±1 + 4 sin y cos y exp (-2|x|) I`.
+-/
 public protected def tanh (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if y == 0 then ⟨Float.tanh x, y⟩
@@ -59,7 +79,7 @@ public protected def tanh (z : ComplexFloat) : ComplexFloat :=
     let e := Float.exp (-x.abs)
     ⟨Float.copySign 1 x, 4 * Float.sin y * Float.cos y * e * e⟩
   else
-    -- Kahan's formula.
+    -- Kahan's formula [Kahan1987].
     let t := Float.tan y
     let β := 1 + t * t
     let s := Float.sinh x
