@@ -12,7 +12,23 @@ public import Batteries.Data.Float.Lemmas.Arithmetic
 # Lemmas about `ComplexFloat` arithmetic
 -/
 
+namespace Float.Model.UnpackedFloat
+
+public theorem fma_comm (spec : Format) (u v w : UnpackedFloat) :
+    fma spec u v w = fma spec v u w := by
+  cases u <;> cases v <;> cases w <;> simp [fma, Sign.mul_comm, Nat.mul_comm, Int.add_comm]
+
+end Float.Model.UnpackedFloat
+
+public theorem Float.fma_comm (x y z : Float) : Float.fma x y z = Float.fma y x z := by
+  change Float.ofModel (Float.Model.pack (Float.Model.UnpackedFloat.fma _ _ _ _)) =
+    Float.ofModel (Float.Model.pack (Float.Model.UnpackedFloat.fma _ _ _ _))
+  rw [Float.Model.UnpackedFloat.fma_comm]
+
 namespace ComplexFloat
+
+public theorem mulErr_comm (p q : Float) : mulErr p q = mulErr q p := by
+  simp only [mulErr]; rw [Float.fma_comm, Float.mul_comm]
 
 @[ext] public theorem ext {z w : ComplexFloat} (hre : z.re = w.re) (him : z.im = w.im) :
     z = w := by
@@ -36,7 +52,9 @@ public theorem mul_comm (z w : ComplexFloat) : z * w = w * z := by
   change ComplexFloat.mul z w = ComplexFloat.mul w z
   simp only [ComplexFloat.mul]
   rw [Float.mul_comm w.re z.re, Float.mul_comm w.im z.im, Float.mul_comm w.re z.im,
-    Float.mul_comm w.im z.re, Float.add_comm (z.im * w.re),
+    Float.mul_comm w.im z.re, Float.add_comm (z.im * w.re), mulErr_comm w.re z.re,
+    mulErr_comm w.im z.im, mulErr_comm w.re z.im, mulErr_comm w.im z.re,
+    Float.add_comm (mulErr z.im w.re),
     Float.mul_comm w.recoverInf.re, Float.mul_comm w.recoverInf.im z.recoverInf.im,
     Float.mul_comm w.recoverInf.re z.recoverInf.im, Float.mul_comm w.recoverInf.im z.recoverInf.re,
     Float.add_comm (z.recoverInf.im * w.recoverInf.re), Bool.or_comm w.isInf]

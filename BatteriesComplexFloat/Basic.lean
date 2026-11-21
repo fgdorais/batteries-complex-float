@@ -20,6 +20,8 @@ Annex G of the C standard (IEC 60559-compatible complex arithmetic):
   literal `1 : ComplexFloat` has imaginary part `+0` and `0 - (+0) = +0`;
 * multiplication and division recover infinities: a product or quotient involving an infinite
   operand is infinite even when the textbook formula gives NaN in both parts;
+* multiplication recovers the rounding errors of its products with fused multiply-adds, so that
+  each part of a product is accurate to a few units in the last place;
 * division scales its operands so that it neither overflows nor underflows prematurely, and
   computes its numerators with fused multiply-adds so that each part of the quotient is
   accurate to a few units in the last place.
@@ -111,23 +113,10 @@ Signs are kept throughout.
     ⟨zero z.re, zero z.im⟩
 
 /--
-Multiplication, as in the reference implementation `_Cmultd` of [C17, G.5.1, Example 1]: the
-textbook formula, then recovery of infinite results when both parts come out NaN. When an
-operand is infinite or an intermediate product overflows, both operands go through `recoverInf`
-and the textbook formula is applied again and multiplied by `inf`. This is a symmetric
-rearrangement of the case analysis in `_Cmultd`, which gives the same results.
+The rounding error `p q - fl(p q)` of a product, computed exactly with a fused multiply-add when
+`p q` neither underflows nor overflows. It is infinite or NaN when `p q` overflows.
 -/
-@[expose] public protected def mul (z w : ComplexFloat) : ComplexFloat :=
-  let x := z.re * w.re - z.im * w.im
-  let y := z.re * w.im + z.im * w.re
-  if x.isNaN && y.isNaN then
-    let overflow := (z.re * w.re).isInf || (z.im * w.im).isInf || (z.re * w.im).isInf
-      || (z.im * w.re).isInf
-    if z.isInf || w.isInf || overflow then
-      let z := z.recoverInf; let w := w.recoverInf
-      ⟨Float.inf * (z.re * w.re - z.im * w.im), Float.inf * (z.re * w.im + z.im * w.re)⟩
-    else ⟨x, y⟩
-  else ⟨x, y⟩
+@[expose] public def mulErr (p q : Float) : Float := Float.fma p q (-(p * q))
 
 /--
 `p * q + r * s` with an error of at most two units in the last place, by Kahan's algorithm with
@@ -139,6 +128,34 @@ the two products nearly cancel.
   let w := r * s
   let e := Float.fma (-r) s w
   Float.fma p q w - e
+
+/--
+Multiplication, as in the reference implementation `_Cmultd` of [C17, G.5.1, Example 1]: the
+textbook formula, then recovery of infinite results when both parts come out NaN. Unlike
+`_Cmultd`, the rounding errors of the four products are recovered with `mulErr` and added back,
+which keeps each part of the result within a few units in the last place of the exact product
+even when the two products in it nearly cancel. This is the idea of Kahan's algorithm in
+`dotFma`, with both errors recovered so that multiplication stays commutative. When an
+operand is infinite or an intermediate product overflows, both operands go through `recoverInf`
+and the textbook formula is applied again and multiplied by `inf`. This is a symmetric
+rearrangement of the case analysis in `_Cmultd`, which gives the same results.
+-/
+@[expose] public protected def mul (z w : ComplexFloat) : ComplexFloat :=
+  let a := z.re; let b := z.im; let c := w.re; let d := w.im
+  -- The rounding errors of the four products are added back. An error is infinite or NaN when
+  -- its product overflows, and then the textbook formula stands, as in C. A zero error is
+  -- skipped, so that signs of zeros are as in the textbook formula.
+  let fix (u e : Float) : Float := if e.isFinite && e != 0 then u + e else u
+  let x := fix (a * c - b * d) (mulErr a c - mulErr b d)
+  let y := fix (a * d + b * c) (mulErr a d + mulErr b c)
+  if x.isNaN && y.isNaN then
+    let overflow := (z.re * w.re).isInf || (z.im * w.im).isInf || (z.re * w.im).isInf
+      || (z.im * w.re).isInf
+    if z.isInf || w.isInf || overflow then
+      let z := z.recoverInf; let w := w.recoverInf
+      ⟨Float.inf * (z.re * w.re - z.im * w.im), Float.inf * (z.re * w.im + z.im * w.re)⟩
+    else ⟨x, y⟩
+  else ⟨x, y⟩
 
 /--
 `n / d * 2 ^ s`, rounded once (when `n` and `d` are normal): both are first scaled to `[1, 2)`, so
