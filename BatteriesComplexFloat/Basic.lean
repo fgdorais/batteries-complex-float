@@ -20,13 +20,21 @@ Annex G of the C standard (IEC 60559-compatible complex arithmetic):
   literal `1 : ComplexFloat` has imaginary part `+0` and `0 - (+0) = +0`;
 * multiplication and division recover infinities: a product or quotient involving an infinite
   operand is infinite even when the textbook formula gives NaN in both parts;
-* division scales its operands so that it neither overflows nor underflows prematurely.
+* division scales its operands so that it neither overflows nor underflows prematurely, and
+  computes its numerators with fused multiply-adds so that each part of the quotient is
+  accurate to a few units in the last place.
 
 ## References
 
 * [C17] ISO/IEC 9899:2018, *Information technology — Programming languages — C*,
   Annex G, *IEC 60559-compatible complex arithmetic*. Section numbers G.x refer to this annex.
 * [IEEE754] *IEEE Standard for Floating-Point Arithmetic*, IEEE Std 754-2019.
+* [JeannerodLouvetMuller2013a] C.-P. Jeannerod, N. Louvet and J.-M. Muller, *Further analysis
+  of Kahan's algorithm for the accurate computation of 2 × 2 determinants*, Mathematics of
+  Computation 82 (2013), no. 284, 2245–2264.
+* [JeannerodLouvetMuller2013b] C.-P. Jeannerod, N. Louvet and J.-M. Muller, *On the
+  componentwise accuracy of complex floating-point division with an FMA*, in 21st IEEE
+  Symposium on Computer Arithmetic (ARITH 2013), IEEE, 2013.
 -/
 
 /-- Complex numbers with `Float` real and imaginary parts. -/
@@ -122,21 +130,58 @@ rearrangement of the case analysis in `_Cmultd`, which gives the same results.
   else ⟨x, y⟩
 
 /--
-Division, as in the reference implementation `_Cdivd` of [C17, G.5.1, Example 2]: the divisor
-is scaled by a power of two to avoid overflow and underflow (with `exponent?` and `ldexp` in
-place of C's `logb` and `scalbn`), then infinite and zero results are recovered when both parts
+`p * q + r * s` with an error of at most two units in the last place, by Kahan's algorithm with
+fused multiply-adds [JeannerodLouvetMuller2013a]: the rounding error of `r * s` is recovered
+exactly with an `fma` and subtracted at the end. Unlike `p * q + r * s`, it stays accurate when
+the two products nearly cancel.
+-/
+@[expose] public def dotFma (p q r s : Float) : Float :=
+  let w := r * s
+  let e := Float.fma (-r) s w
+  Float.fma p q w - e
+
+/--
+`n / d * 2 ^ s`, rounded once (when `n` and `d` are normal): both are first scaled to `[1, 2)`, so
+that the quotient does not underflow or overflow before the final scaling.
+-/
+@[expose] public def divScaled (n d : Float) (s : Int) : Float :=
+  match n.exponent?, d.exponent? with
+  | some en, some ed => Float.ldexp (Float.ldexp n (-en) / Float.ldexp d (-ed)) (en - ed + s)
+  | _, _ => Float.ldexp (n / d) s
+
+/--
+Division, following the reference implementation `_Cdivd` of [C17, G.5.1, Example 2] with two
+changes. Both operands are scaled by powers of two (with `exponent?` and `ldexp` in place of
+C's `logb` and `scalbn`), the dividend as well as the divisor, so that nothing overflows or
+underflows before the final scaling. The numerators `a c + b d` and `b c - a d` are computed with
+`dotFma`, which keeps each part of the result within a few units in the last place of the
+exact quotient [JeannerodLouvetMuller2013b], whereas the textbook formula can lose all digits of
+a part to cancellation. Infinite and zero results are recovered as in `_Cdivd` when both parts
 come out NaN.
 -/
 @[expose] public protected def div (z w : ComplexFloat) : ComplexFloat :=
   let a := z.re; let b := z.im; let c := w.re; let d := w.im
-  let k := (Float.maximum c.abs d.abs).exponent?
-  let (c', d') := match k with
-    | some k => (Float.ldexp c (-k), Float.ldexp d (-k))
-    | none => (c, d)
-  let k := k.getD 0
+  -- Both operands are scaled so that their larger part is in `[2 ^ 509, 2 ^ 510)`: the products
+  -- and `denom` then stay below `2 ^ 1021`, a part up to `2 ^ 1531` times smaller than the other
+  -- stays a normal number, and `divScaled` rescales before the only rounding that can underflow.
+  let scale (u v : Float) (e : Int) : Float × Float × Int :=
+    match (Float.maximum u.abs v.abs).exponent? with
+    | some k => (Float.ldexp u (e - k), Float.ldexp v (e - k), k - e)
+    | none => (u, v, 0)
+  let (a', b', j) := scale a b 509
+  let (c', d', k) := scale c d 509
   let denom := c' * c' + d' * d'
-  let x := Float.ldexp ((a * c' + b * d') / denom) (-k)
-  let y := Float.ldexp ((b * c' - a * d') / denom) (-k)
+  -- A real or imaginary divisor needs no formula: `(a + b I) / c = a / c + (b / c) I`, which is
+  -- correctly rounded. A zero part keeps the sign that the formula would give it.
+  let part (u v : Float) (n : Float) : Float := if u == 0 then n else v
+  let (x, y) :=
+    if z.isFinite && d == 0 && c != 0 && c.isFinite then
+      (part a (a / c) (a * c + b * d), part b (b / c) (b * c - a * d))
+    else if z.isFinite && c == 0 && d != 0 && d.isFinite then
+      (part b (b / d) (a * c + b * d), part a (-a / d) (b * c - a * d))
+    else
+      (divScaled (dotFma a' c' b' d') denom (j - k),
+        divScaled (dotFma b' c' (-a') d') denom (j - k))
   if x.isNaN && y.isNaN then
     let box (u : Float) := Float.copySign (if u.isInf then 1 else 0) u
     if denom == 0 && (!a.isNaN || !b.isNaN) then

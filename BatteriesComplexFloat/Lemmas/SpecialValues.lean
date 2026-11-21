@@ -56,6 +56,17 @@ public theorem div_self_huge : (⟨1e300, 1e300⟩ : ComplexFloat) / ⟨1e300, 1
 public theorem div_self_tiny : (⟨1e-300, 1e-300⟩ : ComplexFloat) / ⟨1e-300, 1e-300⟩ = ⟨1, 0⟩ := by
   decide +kernel
 
+/-- Dividing by a real number divides each part. -/
+public theorem div_real : (⟨3, 1⟩ : ComplexFloat) / ⟨2, 0⟩ = ⟨1.5, 0.5⟩ := by
+  decide +kernel
+
+/-- The imaginary part of `(1 + 3 I) / ((3 + 2⁻⁵⁰) + 9 I)` has numerator `3 * 2⁻⁵⁰` exactly, which
+the textbook formula gets a third too large because `3 * (3 + 2⁻⁵⁰)` rounds. -/
+public theorem div_cancel_im :
+    ((⟨1, 3⟩ : ComplexFloat) / ⟨3 + Float.twoPow (-50), 9⟩).im =
+      3 * Float.twoPow (-50) / ((3 + Float.twoPow (-50)) * (3 + Float.twoPow (-50)) + 81) := by
+  decide +kernel
+
 /-! ## Absolute value and projection -/
 
 public theorem abs_huge : (⟨3e300, 4e300⟩ : ComplexFloat).abs = 5e300 := by

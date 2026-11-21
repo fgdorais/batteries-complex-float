@@ -26,8 +26,11 @@ rev = "main"
 ## Semantics
 
 - Multiplication and division follow the reference implementations of Annex G (G.5.1, G.5.2):
-  infinities are recovered when the textbook formula gives NaN in both parts, and division
-  scales its operands by a power of two to avoid premature overflow and underflow.
+  infinities are recovered when the textbook formula gives NaN in both parts. Division also
+  scales both operands by powers of two, so nothing overflows or underflows early. It computes its
+  numerators with fused multiply-adds (Kahan's algorithm), so each part of a quotient is within
+  3 ulps of the exact value in tests, even under cancellation. The textbook formula, and the C
+  library's division, can lose every digit of a part there.
 - Mixed real and complex operations treat the real operand as having no imaginary part, so signs
   of zeros survive. There is deliberately no coercion from `Float` to `ComplexFloat`; give
   literals type `Float` in complex expressions, as in `(1 : Float) - z`.
@@ -52,6 +55,12 @@ Each module lists its references, and each docstring cites the ones its algorith
   Clarendon Press, Oxford, 1987.
 - C. F. Borges, *Algorithm 1014: An Improved Algorithm for `hypot(x, y)`*, ACM Transactions on
   Mathematical Software 47 (2020), no. 1, Article 9, doi:10.1145/3428446.
+- C.-P. Jeannerod, N. Louvet and J.-M. Muller, *Further analysis of Kahan's algorithm for the
+  accurate computation of 2 × 2 determinants*, Mathematics of Computation 82 (2013), no. 284,
+  2245–2264.
+- C.-P. Jeannerod, N. Louvet and J.-M. Muller, *On the componentwise accuracy of complex
+  floating-point division with an FMA*, in 21st IEEE Symposium on Computer Arithmetic
+  (ARITH 2013), IEEE, 2013.
 - D. Goldberg, *What Every Computer Scientist Should Know About Floating-Point Arithmetic*, ACM
   Computing Surveys 23 (1991), no. 1, 5–48.
 - D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical Algorithms*, 3rd ed.,
@@ -85,7 +94,9 @@ The `native` directory holds a separate package, `batteries-complex-float-native
 to the C library's `<complex.h>` (`ComplexFloat.Native.exp` and so on). It needs a system C
 compiler with `<complex.h>`, since the compiler bundled with Lean has none. Its `compare`
 executable checks the pure Lean functions against the C library on a grid of special inputs
-(signed zeros, infinities, NaN, tiny and huge numbers) and on random inputs:
+(signed zeros, infinities, NaN, tiny and huge numbers) and on random inputs. It reports many
+division mismatches on extreme inputs. These come from the C library's less accurate division, and
+from the sign of a part that underflows to zero:
 
 ```sh
 cd native && lake build compare && .lake/build/bin/compare 50000
