@@ -27,12 +27,6 @@ constants:
 - `exp`, `log`, `sqrt`, `pow` (also as `^` with complex, real and `Nat` exponents).
 - `sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh` and their inverses `asin`, `acos`, `atan`,
   `asinh`, `acosh`, `atanh`.
-
-In addition:
-
-- `ComplexFloatArray`, an unboxed array of complex numbers with interleaved real and imaginary
-  parts in a `FloatArray` (the layout of C's `double complex` arrays), with indexing, `push`,
-  `set`, `map`, `foldl`, `for` loops and conversions to and from `Array` and `List`.
 - Scalar helpers on `Float` and `Float32` that core lacks: `exponent?`, `ldexp`, `mulErr` (the
   exact rounding error of a product, by `fma`), `hypot`, `log1p`.
 
@@ -41,7 +35,7 @@ In addition:
 `BatteriesComplexFloat.ComplexFloat` and `BatteriesComplexFloat.ComplexFloat32` import
 everything for one type, and the root `BatteriesComplexFloat` imports both. Each has the same
 modules: `Scalar` (helpers on the real type), `Basic` (the type and its arithmetic), `Exp`,
-`Trig`, `Inverse`, `Lemmas.Basic` and `Lemmas.SpecialValues`; `ComplexFloat` also has `Array`.
+`Trig`, `Inverse`, `Lemmas.Basic` and `Lemmas.SpecialValues`.
 The tests in `BatteriesComplexFloatTest`, the C bindings in `native/BatteriesComplexFloatNative`
 and the comparison tools in `native/Compare` are split the same way.
 
