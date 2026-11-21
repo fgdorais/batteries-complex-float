@@ -39,6 +39,13 @@ public theorem mul_overflow_isInf :
 public theorem mul_example : (⟨1, 2⟩ : ComplexFloat) * ⟨3, 4⟩ = ⟨-5, 10⟩ := by
   decide +kernel
 
+/-- The real part of `(1 + 2⁻³⁰ + I) (1 - 2⁻³⁰ + I)` is `-2⁻⁶⁰` exactly, which the textbook
+formula loses because `(1 + 2⁻³⁰) * (1 - 2⁻³⁰)` rounds to `1`. -/
+public theorem mul_cancel_re :
+    ((⟨1 + Float.twoPow (-30), 1⟩ : ComplexFloat) * ⟨1 - Float.twoPow (-30), 1⟩).re =
+      -Float.twoPow (-60) := by
+  decide +kernel
+
 /-! ## Division -/
 
 public theorem div_zero_isInf : ((⟨1, 1⟩ : ComplexFloat) / ⟨0, 0⟩).isInf := by

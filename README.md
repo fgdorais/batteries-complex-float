@@ -26,11 +26,13 @@ rev = "main"
 ## Semantics
 
 - Multiplication and division follow the reference implementations of Annex G (G.5.1, G.5.2):
-  infinities are recovered when the textbook formula gives NaN in both parts. Division also
-  scales both operands by powers of two, so nothing overflows or underflows early. It computes its
-  numerators with fused multiply-adds (Kahan's algorithm), so each part of a quotient is within
-  3 ulps of the exact value in tests, even under cancellation. The textbook formula, and the C
-  library's division, can lose every digit of a part there.
+  infinities are recovered when the textbook formula gives NaN in both parts. Both use fused
+  multiply-adds to stay accurate under cancellation, where the textbook formula and the C
+  library can lose every digit of a part. Multiplication adds back the rounding errors of its
+  four products, and each part of a product is within 1 ulp of the exact value in tests.
+  Division computes its numerators with Kahan's algorithm, and also scales both operands by
+  powers of two so that nothing overflows or underflows early. Each part of a quotient is within
+  3 ulps of the exact value in tests.
 - Mixed real and complex operations treat the real operand as having no imaginary part, so signs
   of zeros survive. There is deliberately no coercion from `Float` to `ComplexFloat`; give
   literals type `Float` in complex expressions, as in `(1 : Float) - z`.
@@ -95,8 +97,8 @@ to the C library's `<complex.h>` (`ComplexFloat.Native.exp` and so on). It needs
 compiler with `<complex.h>`, since the compiler bundled with Lean has none. Its `compare`
 executable checks the pure Lean functions against the C library on a grid of special inputs
 (signed zeros, infinities, NaN, tiny and huge numbers) and on random inputs. It reports many
-division mismatches on extreme inputs. These come from the C library's less accurate division, and
-from the sign of a part that underflows to zero:
+multiplication and division mismatches on extreme inputs. These come from the C library's less
+accurate formulas, and from the sign of a part of a quotient that underflows to zero:
 
 ```sh
 cd native && lake build compare && .lake/build/bin/compare 50000

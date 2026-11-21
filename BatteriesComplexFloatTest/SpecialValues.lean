@@ -35,6 +35,10 @@ def halfPi : Float := 1.5707963267948966
 #guard (⟨∞, 0⟩ : ComplexFloat) * ⟨NaN, 1⟩ |>.isInf
 #guard (⟨1e300, 1e300⟩ : ComplexFloat) * ⟨1e300, 1e300⟩ |>.isInf
 #guard ((⟨1, 2⟩ : ComplexFloat) * ⟨3, 4⟩) ≈ ⟨-5, 10⟩
+-- Cancellation: the real part of `(1 + 2⁻³⁰ + I) (1 - 2⁻³⁰ + I)` is `-2⁻⁶⁰` exactly, but
+-- `(1 + 2⁻³⁰) * (1 - 2⁻³⁰)` rounds to `1`, so the textbook formula gives `0`.
+#guard ((⟨1 + Float.twoPow (-30), 1⟩ : ComplexFloat) * ⟨1 - Float.twoPow (-30), 1⟩) ≈
+  ⟨-Float.twoPow (-60), 2⟩
 
 -- Division: infinite and zero results, no premature overflow or underflow (G.5.2), and
 -- accuracy under cancellation.
