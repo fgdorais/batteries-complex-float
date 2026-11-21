@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import Batteries.Data.Float
+public import Batteries.Data.Float.Basic
 
 /-!
 # Scalar helpers for complex floats
