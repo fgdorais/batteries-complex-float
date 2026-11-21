@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Float32.Basic
+public import BatteriesComplexFloat.ComplexFloat32.Basic
 public import Batteries.Data.Float.Lemmas.Arithmetic
 
 /-!

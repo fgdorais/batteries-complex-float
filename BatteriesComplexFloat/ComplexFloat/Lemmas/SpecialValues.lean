@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Lemmas.Basic
+public import BatteriesComplexFloat.ComplexFloat.Lemmas.Basic
 
 /-!
 # Special values of the arithmetic

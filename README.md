@@ -1,8 +1,9 @@
 # Batteries Complex Float
 
-Complex floating-point numbers for Lean 4: `ComplexFloat`, a pair of `Float`s with the
-semantics of C's `double complex` under Annex G of the C standard, and its single-precision twin
-`ComplexFloat32`. This is a Batteries cell: it builds against
+Complex floating-point numbers for Lean 4, in two precisions: `ComplexFloat`, a pair of
+`Float`s with the semantics of C's `double complex` under Annex G of the C standard, and
+`ComplexFloat32`, a pair of `Float32`s with the semantics of C's `float complex`. This is a
+Batteries cell: it builds against
 [Batteries](https://github.com/leanprover-community/batteries) `main` (and `nightly-testing` on
 the `nightly-testing` branch), and can be imported together with it. For now, `main` requires
 the Batteries branch `float-utils`, whose `Float.signBit`, `Float.copySign` and `fma_comm` it
@@ -17,19 +18,32 @@ rev = "main"
 
 ## What is in it
 
-- `ComplexFloat` with `re` and `im` fields, literals, `I`, `ofReal`, `ofImag`, `conj`, `+`, `-`,
-  `*`, `/`, `inv`, mixed `Float`/`ComplexFloat` arithmetic, `abs`, `normSq`, `arg`, `proj`,
-  `polar`, `isNaN`, `isInf`, `isFinite`, and IEEE (componentwise) `==`.
-- `exp`, `log`, `sqrt`, `pow` (also as `^` with `ComplexFloat`, `Float` and `Nat` exponents).
+Both types have the same API, with the same algorithms and each precision's own thresholds and
+constants:
+
+- `re` and `im` fields, literals, `I`, `ofReal`, `ofImag`, `conj`, `+`, `-`, `*`, `/`, `inv`,
+  mixed real and complex arithmetic, `abs`, `normSq`, `arg`, `proj`, `polar`, `isNaN`, `isInf`,
+  `isFinite`, and IEEE (componentwise) `==`.
+- `exp`, `log`, `sqrt`, `pow` (also as `^` with complex, real and `Nat` exponents).
 - `sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh` and their inverses `asin`, `acos`, `atan`,
   `asinh`, `acosh`, `atanh`.
-- `ComplexFloat32`, with all of the above on `Float32` parts: the same algorithms, with
-  single-precision thresholds and constants.
+
+In addition:
+
 - `ComplexFloatArray`, an unboxed array of complex numbers with interleaved real and imaginary
   parts in a `FloatArray` (the layout of C's `double complex` arrays), with indexing, `push`,
   `set`, `map`, `foldl`, `for` loops and conversions to and from `Array` and `List`.
 - Scalar helpers on `Float` and `Float32` that core lacks: `exponent?`, `ldexp`, `mulErr` (the
   exact rounding error of a product, by `fma`), `hypot`, `log1p`.
+
+## Layout
+
+`BatteriesComplexFloat.ComplexFloat` and `BatteriesComplexFloat.ComplexFloat32` import
+everything for one type, and the root `BatteriesComplexFloat` imports both. Each has the same
+modules: `Scalar` (helpers on the real type), `Basic` (the type and its arithmetic), `Exp`,
+`Trig`, `Inverse`, `Lemmas.Basic` and `Lemmas.SpecialValues`; `ComplexFloat` also has `Array`.
+The tests in `BatteriesComplexFloatTest`, the C bindings in `native/BatteriesComplexFloatNative`
+and the comparison tools in `native/Compare` are split the same way.
 
 ## Semantics
 
@@ -80,21 +94,21 @@ Each module lists its references, and each docstring cites the ones its algorith
 
 ## Proofs
 
-Core arithmetic on `Float` (`+`, `-`, `*`, `/`, `sqrt`, `fma`, bit casts, comparisons) has a
-logical model, `Float.Model`, while the transcendental functions are opaque. The arithmetic in
-this library, including `ldexp`, `exponent?`, `hypot`, `*` and `/`, is written with modeled
-operations only and is exposed, so it can be reasoned about. The other functions are not
-exposed.
+Core arithmetic on `Float` and `Float32` (`+`, `-`, `*`, `/`, `sqrt`, `fma`, bit casts, comparisons)
+has logical models, `Float.Model` and `Float32.Model`, while the transcendental functions are
+opaque. The arithmetic in this library, including `ldexp`, `exponent?`, `hypot`, `*` and `/`, is
+written with modeled operations only and is exposed, so it can be reasoned about. The other
+functions are not exposed.
 
 - The cell imports three Batteries modules: `Batteries.Data.Float.Basic` (for `Float.pi`),
   `Batteries.Data.Float.Bits` (for `signBit` and `copySign`) and
   `Batteries.Data.Float.Lemmas.Arithmetic`, which proves `neg_neg`, `neg_mul`, `mul_neg`,
   `neg_div`, `div_neg`, `mul_comm`, `add_comm` and `fma_comm` through the model.
-- `BatteriesComplexFloat.Lemmas.Basic` and `Lemmas.Basic32` prove `ext`, `conj_conj`,
-  `neg_neg`, `conj_neg` and `mul_comm` for `ComplexFloat` and `ComplexFloat32`.
-- `BatteriesComplexFloat.Lemmas.SpecialValues` proves Annex G special values of `*`, `/`, `abs`
-  and `proj` by evaluating the model in the kernel (`decide +kernel`), and that
-  `conj (z * w) = conj z * conj w` fails on a sign of zero.
+- `Lemmas.Basic` proves `ext`, `conj_conj`, `neg_neg`, `conj_neg` and `mul_comm`, for each
+  type.
+- `Lemmas.SpecialValues` proves Annex G special values of `*`, `/`, `abs` and `proj` by
+  evaluating the model in the kernel (`decide +kernel`), and that `conj (z * w) = conj z *
+  conj w` fails on a sign of zero, for each type.
 
 Identities such as `-(x + y) = -x + -y` are false in IEEE arithmetic (`x + (-x)` is `+0`), so
 the lemmas that hold are the sign-symmetric ones for `*` and `/` and the commutativity of `+`

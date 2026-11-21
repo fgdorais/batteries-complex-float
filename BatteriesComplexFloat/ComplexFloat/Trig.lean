@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Basic
+public import BatteriesComplexFloat.ComplexFloat.Basic
 
 /-!
 # Hyperbolic and trigonometric functions
