@@ -45,10 +45,10 @@ and the comparison tools in `native/Compare` are split the same way.
   infinities are recovered when the textbook formula gives NaN in both parts. Both use fused
   multiply-adds to stay accurate under cancellation, where the textbook formula and the C
   library can lose every digit of a part. Multiplication adds back the rounding errors of its
-  four products, and each part of a product is within 1 ulp of the exact value in tests.
-  Division computes its numerators with Kahan's algorithm, and also scales both operands by
-  powers of two so that nothing overflows or underflows early. Each part of a quotient is within
-  3 ulps of the exact value in tests.
+  four products, so each part of a product is within 1 ulp of the exact value in our
+  measurements. Division computes its numerators with Kahan's algorithm, and also scales both
+  operands by powers of two so that nothing overflows or underflows early. Each part of a
+  quotient is within 4 ulps of the exact value. See [Accuracy](#accuracy).
 - Mixed real and complex operations treat the real operand as having no imaginary part, so signs
   of zeros survive. There is deliberately no coercion from `Float` to `ComplexFloat`; give
   literals type `Float` in complex expressions, as in `(1 : Float) - z`.
@@ -60,6 +60,70 @@ and the comparison tools in `native/Compare` are split the same way.
   `cosh` avoid premature overflow for large real parts as FreeBSD's libm does.
 - Lean's `Float` has a canonical NaN without sign or payload, so where Annex G leaves the sign of
   a result unspecified the choice can differ from a C library that propagates NaN signs.
+
+## Accuracy
+
+The table gives the largest error measured in each part of the result, in ulps of that part,
+for the pure Lean functions and for glibc's `<complex.h>` on the same inputs. The inputs are
+200,000 random numbers in each of four sets: parts with exponents in `[-4, 4)`, in `[-60, 60)`
+(`[-30, 30)` for `Float32`), over the whole exponent range, and numbers near the unit circle
+and the branch points `±1` and `±I`. Products and quotients are compared with the exact result
+in `Rat`, and the elementary functions with glibc's `long double complex` functions (11 more
+bits) for `ComplexFloat` and its `double complex` functions for `ComplexFloat32`. Inputs whose
+reference is not finite are skipped. The `accuracy` executable in `native/` regenerates the
+full tables, by input set and with normwise errors too:
+
+```sh
+cd native && lake build accuracy && .lake/build/bin/accuracy 200000
+```
+
+| function | `ComplexFloat` | glibc `double` | `ComplexFloat32` | glibc `float` |
+|---|---|---|---|---|
+| `*` | **1.00** | 32,044 | **1.11** | 36,081 |
+| `/` | **3.76** | ∞ | **3.20** (13.9 ¹) | ∞ |
+| `abs` | 1.00 | 1.00 | 0.75 | 0.50 |
+| `arg` | 0.52 | 0.52 | 1.45 | 1.45 |
+| `exp` | 1.93 | 1.93 | 1.90 | 1.90 |
+| `log` | 2.73 | 2.46 | 2.54 | 2.46 |
+| `sqrt` | 2.19 | 2.19 | 2.04 | 2.04 |
+| `sin`, `cos` | 2.85 | 2.85 | 2.81 | 2.81 |
+| `tan` | 5.61 | 5.77 | **5.35** | 7.16 |
+| `sinh`, `cosh` | 2.86 | 2.86 | 2.99 | 2.99 |
+| `tanh` | 5.73 | 5.81 | 5.09 | 5.84 |
+| `asin` | 4.30 | 4.25 | 4.29 | 3.80 |
+| `acos`, `acosh` | 3.85 | 4.25 | 3.85 | 3.82 |
+| `atan` | **4.08** | 4.84 | **3.75** | 5.30 |
+| `asinh` | 4.13 | 4.61 | 4.24 | 4.11 |
+| `atanh` | **4.01** | 4.87 | **3.86** | 5.01 |
+
+¹ When the parts of an operand differ by more than a factor of about `2 ^ 187`, the smaller one
+is subnormal once the operand is scaled. The error relative to the norm of the quotient is
+still below 4 ulps.
+
+Where we do better than glibc:
+
+- **Multiplication and division.** glibc uses the textbook formula, which loses every digit of
+  a part when its two products nearly cancel: 32,044 ulps in a part of a product with
+  exponents in `[-4, 4)`, and 501,626 ulps in a part of a quotient. glibc's division also
+  overflows or underflows early, so over the whole exponent range it returns infinite or zero
+  parts for finite, nonzero quotients (the ∞ in the table). Ours stays within 1 ulp for
+  products (1.11 ulps for subnormal `Float32` results) and 4 ulps for quotients (except as in
+  the note). Measured normwise, both are within 4 ulps where glibc does not overflow.
+- **`atan`, `atanh`, `tan` and `tanh`.** Up to 1.8 ulps better on the worst case, and more
+  inputs where glibc is off by over 1 ulp more than ours than the reverse.
+- **A bug that measuring found.** Before these measurements, our `log` was off by 125 ulps in
+  the real part near the unit circle, where `log |z|` cancels. It now computes `|z|² - 1` as an
+  exact sum of `fma` error terms. The same measurements found spurious overflow in `log`,
+  `asin`, `acos`, `asinh`, `acosh`, `atan` and `atanh` for parts near the largest finite number,
+  now fixed.
+
+`exp`, `sqrt`, `sin`, `cos`, `sinh` and `cosh` are as accurate as glibc's: both are built the
+same way from the same real functions. glibc is slightly better on the worst case of `log` and
+`asin` and, for `Float32`, of `asinh` and `abs`.
+
+The CI tests check smaller samples: products within 1 ulp and quotients within 3 ulps of the
+exact result in both precisions, and each `ComplexFloat32` function against `ComplexFloat`, to
+the bounds of the table rounded up to the next half ulp (6 ulps for `tan` and `tanh`).
 
 ## References
 
@@ -126,10 +190,14 @@ cd native && lake build compare && .lake/build/bin/compare 50000
 The `compare32` executable does the same for `ComplexFloat32` against the `float complex`
 functions.
 
+The `accuracy` executable measures accuracy against higher-precision references (see
+[Accuracy](#accuracy)).
+
 The test library `BatteriesComplexFloatTest` is built by CI. It checks Annex G special values
-with `#guard`, in both precisions, and checks multiplication and division against exact
-rational arithmetic: each part of a product within 1 ulp and of a quotient within 3 ulps of the
-exact result, on random inputs over the whole exponent range and on inputs with cancellation.
+with `#guard`, in both precisions. It checks multiplication and division against exact rational
+arithmetic: each part of a product within 1 ulp and of a quotient within 3 ulps of the exact
+result, on random inputs over the whole exponent range and on inputs with cancellation. It also
+checks each `ComplexFloat32` function against the `ComplexFloat` one.
 
 ## Branches and workflows
 

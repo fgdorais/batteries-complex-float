@@ -26,6 +26,21 @@ Annex G of the C standard (IEC 60559-compatible complex arithmetic):
   computes its numerators with fused multiply-adds so that each part of the quotient is
   accurate to a few units in the last place.
 
+## Accuracy
+
+The errors below are the largest measured, in ulps of each part of the result, by the
+`accuracy` executable of `native/` on random inputs of several magnitudes and on inputs near the
+unit circle and the branch points: multiplication and division against the exact result in
+`Rat`, and the elementary functions against the C library's `long double complex` functions
+(which have 11 more bits). The tests in `BatteriesComplexFloatTest` check smaller samples in CI.
+
+* `*`: 1 ulp, whereas the textbook formula (and the C library) can lose every digit
+  of a part to cancellation.
+* `/`: 4 ulps.
+* `abs`: 1 ulp; `arg`: that of `Float.atan2`.
+* `exp`, `sqrt`: 2.5 ulps; `log`, `sin`, `cos`, `sinh`, `cosh`: 3 ulps; `tan`, `tanh`: 6 ulps;
+  `asin`, `acos`, `atan`, `asinh`, `acosh`, `atanh`: 4.5 ulps.
+
 ## References
 
 * [C17] ISO/IEC 9899:2018, *Information technology — Programming languages — C*,

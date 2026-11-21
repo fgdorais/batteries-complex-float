@@ -35,12 +35,23 @@ private def quarterPi : Float := 0.7853981633974483
 /-- `3π / 4`. -/
 private def threeQuarterPi : Float := 2.356194490192345
 
+/-- `4` when a part of `z` exceeds `2 ^ 1020`, and `0` otherwise: the products of square roots in
+the formulas below are then computed scaled down by `2 ^ (-4)`, so that they do not overflow. -/
+private def bigShift (z : ComplexFloat) : Int :=
+  if z.re.abs > Float.twoPow 1020 || z.im.abs > Float.twoPow 1020 then 4 else 0
+
+/-- `z * 2 ^ (-k / 2)`. -/
+private def scaleDown (k : Int) (z : ComplexFloat) : ComplexFloat :=
+  if k == 0 then z else ⟨Float.ldexp z.re (-k / 2), Float.ldexp z.im (-k / 2)⟩
+
 /-- `arcsin` on finite inputs, by the formula of [Kahan1987]:
 `asin z = atan (re z / re (√(1 - z) √(1 + z))) + asinh (im (conj √(1 - z) * √(1 + z))) I`. -/
 private def asinFinite (z : ComplexFloat) : ComplexFloat :=
-  let a := ComplexFloat.sqrt ⟨1 - z.re, -z.im⟩
-  let b := ComplexFloat.sqrt ⟨1 + z.re, z.im⟩
-  ⟨Float.atan (z.re / (a.re * b.re - a.im * b.im)), Float.asinh (a.re * b.im - a.im * b.re)⟩
+  let k := bigShift z
+  let a := scaleDown k (ComplexFloat.sqrt ⟨1 - z.re, -z.im⟩)
+  let b := scaleDown k (ComplexFloat.sqrt ⟨1 + z.re, z.im⟩)
+  ⟨Float.atan (Float.ldexp (z.re / (a.re * b.re - a.im * b.im)) (-k)),
+    Float.asinhLdexp (a.re * b.im - a.im * b.re) k.toNat⟩
 
 /--
 The complex inverse hyperbolic sine, with branch cuts along the imaginary axis outside `[-I, I]`
@@ -77,9 +88,10 @@ special values of [C17, G.6.1.1]. Finite arguments use the formula of [Kahan1987
 public protected def acos (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if z.isFinite then
-    let a := ComplexFloat.sqrt ⟨1 - z.re, -z.im⟩
-    let b := ComplexFloat.sqrt ⟨1 + z.re, z.im⟩
-    ⟨2 * Float.atan (a.re / b.re), Float.asinh (b.re * a.im - b.im * a.re)⟩
+    let k := bigShift z
+    let a := scaleDown k (ComplexFloat.sqrt ⟨1 - z.re, -z.im⟩)
+    let b := scaleDown k (ComplexFloat.sqrt ⟨1 + z.re, z.im⟩)
+    ⟨2 * Float.atan (a.re / b.re), Float.asinhLdexp (b.re * a.im - b.im * a.re) k.toNat⟩
   else if y.isInf then
     let re :=
       if x.isNaN then x
@@ -100,9 +112,10 @@ special values of [C17, G.6.2.1]. Finite arguments use the formula of [Kahan1987
 public protected def acosh (z : ComplexFloat) : ComplexFloat :=
   let x := z.re; let y := z.im
   if z.isFinite then
-    let a := ComplexFloat.sqrt ⟨z.re - 1, z.im⟩
-    let b := ComplexFloat.sqrt ⟨z.re + 1, z.im⟩
-    ⟨Float.asinh (a.re * b.re + a.im * b.im), 2 * Float.atan (a.im / b.re)⟩
+    let k := bigShift z
+    let a := scaleDown k (ComplexFloat.sqrt ⟨z.re - 1, z.im⟩)
+    let b := scaleDown k (ComplexFloat.sqrt ⟨z.re + 1, z.im⟩)
+    ⟨Float.asinhLdexp (a.re * b.re + a.im * b.im) k.toNat, 2 * Float.atan (a.im / b.re)⟩
   else if y.isInf then
     if x.isNaN then ⟨Float.inf, x⟩
     else
@@ -145,8 +158,8 @@ public protected def atanh (z : ComplexFloat) : ComplexFloat :=
       if x > atanhBig || y.abs > atanhBig then
         let ξ :=
           if x.isInf || y.isInf then 0
-          else if x ≥ y.abs then 1 / (x + y * (y / x))
-          else let r := x / y; r / (y + x * r)
+          else if x ≥ y.abs then let r := y / x; 1 / (1 + r * r) / x
+          else let r := x / y; r / (1 + r * r) / y
         (ξ, Float.copySign halfPi y)
       else if x == 1 && y == 0 then (Float.inf, y)
       else if x == 1 && y.abs < Float.twoPow (-500) then

@@ -2,3 +2,4 @@ module
 
 public import BatteriesComplexFloatNative.ComplexFloat
 public import BatteriesComplexFloatNative.ComplexFloat32
+public import BatteriesComplexFloatNative.Reference

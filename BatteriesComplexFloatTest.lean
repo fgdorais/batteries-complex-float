@@ -1,4 +1,5 @@
 import BatteriesComplexFloatTest.ComplexFloat.Accuracy
 import BatteriesComplexFloatTest.ComplexFloat.SpecialValues
 import BatteriesComplexFloatTest.ComplexFloat32.Accuracy
+import BatteriesComplexFloatTest.ComplexFloat32.Functions
 import BatteriesComplexFloatTest.ComplexFloat32.SpecialValues
