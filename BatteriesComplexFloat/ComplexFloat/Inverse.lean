@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Exp
+public import BatteriesComplexFloat.ComplexFloat.Exp
 
 /-!
 # Inverse hyperbolic and trigonometric functions

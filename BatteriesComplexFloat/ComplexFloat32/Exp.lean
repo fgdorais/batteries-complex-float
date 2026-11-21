@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Float32.Basic
+public import BatteriesComplexFloat.ComplexFloat32.Basic
 
 /-!
 # Exponential, logarithm, square root and powers

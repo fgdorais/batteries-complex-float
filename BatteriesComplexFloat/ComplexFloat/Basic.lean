@@ -5,7 +5,7 @@ Authors: François G. Dorais
 -/
 module
 
-public import BatteriesComplexFloat.Float
+public import BatteriesComplexFloat.ComplexFloat.Scalar
 
 /-!
 # Complex floating-point numbers

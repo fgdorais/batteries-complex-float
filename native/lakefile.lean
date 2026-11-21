@@ -15,11 +15,11 @@ lean_lib BatteriesComplexFloatNative
 
 /-- Compares the pure Lean functions with the C library. -/
 lean_exe compare where
-  root := `Compare
+  root := `Compare.ComplexFloat
 
 /-- Compares the pure Lean `ComplexFloat32` functions with the C library. -/
 lean_exe compare32 where
-  root := `Compare32
+  root := `Compare.ComplexFloat32
 
 target complex_float.o pkg : FilePath := do
   let oFile := pkg.buildDir / "c" / "complex_float.o"

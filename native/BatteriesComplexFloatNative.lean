@@ -1,4 +1,4 @@
 module
 
-public import BatteriesComplexFloatNative.Basic
-public import BatteriesComplexFloatNative.Float32
+public import BatteriesComplexFloatNative.ComplexFloat
+public import BatteriesComplexFloatNative.ComplexFloat32
