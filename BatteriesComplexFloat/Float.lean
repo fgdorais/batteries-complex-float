@@ -6,6 +6,7 @@ Authors: François G. Dorais
 module
 
 public import Batteries.Data.Float.Basic
+public import Batteries.Data.Float.Bits
 
 /-!
 # Scalar helpers for complex floats
@@ -29,16 +30,6 @@ which call `exp` and `log`.
 -/
 
 namespace Float
-
-/-- The sign bit of `x`: `true` for negative numbers and `-0` (`isSignMinus` of [IEEE754, 5.7.2]).
-Lean's NaN is canonical, with sign bit clear. -/
-@[expose, inline] public def signBit (x : Float) : Bool :=
-  x.toBits >>> 63 == 1
-
-/-- The float with the magnitude of `x` and the sign bit of `y` (`copySign` of
-[IEEE754, 5.5.1]). -/
-@[expose, inline] public def copySign (x y : Float) : Float :=
-  .ofBits ((x.toBits &&& 0x7FFFFFFFFFFFFFFF) ||| (y.toBits &&& 0x8000000000000000))
 
 /-- `2 ^ n` for `-1022 ≤ n ≤ 1023`, built from its bit pattern. -/
 @[expose, inline] public def twoPow (n : Int) : Float :=
