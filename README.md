@@ -111,11 +111,6 @@ Where we do better than glibc:
   the note). Measured normwise, both are within 4 ulps where glibc does not overflow.
 - **`atan`, `atanh`, `tan` and `tanh`.** Up to 1.8 ulps better on the worst case, and more
   inputs where glibc is off by over 1 ulp more than ours than the reverse.
-- **A bug that measuring found.** Before these measurements, our `log` was off by 125 ulps in
-  the real part near the unit circle, where `log |z|` cancels. It now computes `|z|² - 1` as an
-  exact sum of `fma` error terms. The same measurements found spurious overflow in `log`,
-  `asin`, `acos`, `asinh`, `acosh`, `atan` and `atanh` for parts near the largest finite number,
-  now fixed.
 
 `exp`, `sqrt`, `sin`, `cos`, `sinh` and `cosh` are as accurate as glibc's: both are built the
 same way from the same real functions. glibc is slightly better on the worst case of `log` and
