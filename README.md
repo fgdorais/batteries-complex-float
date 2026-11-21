@@ -66,9 +66,9 @@ this library, including `ldexp`, `exponent?`, `hypot`, `*` and `/`, is written w
 operations only and is exposed, so it can be reasoned about. The other functions are not
 exposed.
 
-- The basic `Float` lemmas come from Batteries (`Batteries.Data.Float.Lemmas`), which proves
-  `neg_neg`, `neg_mul`, `mul_neg`, `neg_div`, `div_neg`, `mul_comm`, `add_comm` and the order
-  lemmas through the model.
+- The cell imports two Batteries modules: `Batteries.Data.Float.Basic` (for `Float.pi`) and
+  `Batteries.Data.Float.Lemmas.Arithmetic`, which proves `neg_neg`, `neg_mul`, `mul_neg`,
+  `neg_div`, `div_neg`, `mul_comm` and `add_comm` through the model.
 - `BatteriesComplexFloat.Lemmas.Basic` proves `ext`, `conj_conj`, `neg_neg`, `conj_neg` and
   `mul_comm` for `ComplexFloat`.
 - `BatteriesComplexFloat.Lemmas.SpecialValues` proves Annex G special values of `*`, `/`, `abs`

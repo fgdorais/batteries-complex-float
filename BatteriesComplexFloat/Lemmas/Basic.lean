@@ -6,7 +6,7 @@ Authors: François G. Dorais
 module
 
 public import BatteriesComplexFloat.Basic
-public import Batteries.Data.Float.Lemmas
+public import Batteries.Data.Float.Lemmas.Arithmetic
 
 /-!
 # Lemmas about `ComplexFloat` arithmetic
