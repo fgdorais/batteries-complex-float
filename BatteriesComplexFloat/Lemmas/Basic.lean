@@ -12,19 +12,6 @@ public import Batteries.Data.Float.Lemmas.Arithmetic
 # Lemmas about `ComplexFloat` arithmetic
 -/
 
-namespace Float.Model.UnpackedFloat
-
-public theorem fma_comm (spec : Format) (u v w : UnpackedFloat) :
-    fma spec u v w = fma spec v u w := by
-  cases u <;> cases v <;> cases w <;> simp [fma, Sign.mul_comm, Nat.mul_comm, Int.add_comm]
-
-end Float.Model.UnpackedFloat
-
-public theorem Float.fma_comm (x y z : Float) : Float.fma x y z = Float.fma y x z := by
-  change Float.ofModel (Float.Model.pack (Float.Model.UnpackedFloat.fma _ _ _ _)) =
-    Float.ofModel (Float.Model.pack (Float.Model.UnpackedFloat.fma _ _ _ _))
-  rw [Float.Model.UnpackedFloat.fma_comm]
-
 namespace ComplexFloat
 
 public theorem mulErr_comm (p q : Float) : mulErr p q = mulErr q p := by
