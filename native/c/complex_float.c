@@ -43,3 +43,43 @@ LEAN_EXPORT lean_obj_res lean_complex_float_div(b_lean_obj_arg z, b_lean_obj_arg
 
 LEAN_EXPORT double lean_complex_float_cabs(b_lean_obj_arg z) { return cabs(unbox(z)); }
 LEAN_EXPORT double lean_complex_float_carg(b_lean_obj_arg z) { return carg(unbox(z)); }
+
+/* `ComplexFloat32` is a structure with two `Float32` fields: 8 bytes of scalar data. */
+
+static inline float complex unbox32(b_lean_obj_arg z) {
+  return CMPLXF(lean_ctor_get_float32(z, 0), lean_ctor_get_float32(z, sizeof(float)));
+}
+
+static inline lean_obj_res box32(float complex z) {
+  lean_object *r = lean_alloc_ctor(0, 0, 2 * sizeof(float));
+  lean_ctor_set_float32(r, 0, crealf(z));
+  lean_ctor_set_float32(r, sizeof(float), cimagf(z));
+  return r;
+}
+
+#define UNARY32(name) \
+  LEAN_EXPORT lean_obj_res lean_complex_float32_##name(b_lean_obj_arg z) { \
+    return box32(name##f(unbox32(z))); \
+  }
+
+UNARY32(cexp) UNARY32(clog) UNARY32(csqrt)
+UNARY32(csin) UNARY32(ccos) UNARY32(ctan)
+UNARY32(csinh) UNARY32(ccosh) UNARY32(ctanh)
+UNARY32(casin) UNARY32(cacos) UNARY32(catan)
+UNARY32(casinh) UNARY32(cacosh) UNARY32(catanh)
+UNARY32(cproj) UNARY32(conj)
+
+LEAN_EXPORT lean_obj_res lean_complex_float32_cpow(b_lean_obj_arg z, b_lean_obj_arg w) {
+  return box32(cpowf(unbox32(z), unbox32(w)));
+}
+
+LEAN_EXPORT lean_obj_res lean_complex_float32_mul(b_lean_obj_arg z, b_lean_obj_arg w) {
+  return box32(unbox32(z) * unbox32(w));
+}
+
+LEAN_EXPORT lean_obj_res lean_complex_float32_div(b_lean_obj_arg z, b_lean_obj_arg w) {
+  return box32(unbox32(z) / unbox32(w));
+}
+
+LEAN_EXPORT float lean_complex_float32_cabs(b_lean_obj_arg z) { return cabsf(unbox32(z)); }
+LEAN_EXPORT float lean_complex_float32_carg(b_lean_obj_arg z) { return cargf(unbox32(z)); }
