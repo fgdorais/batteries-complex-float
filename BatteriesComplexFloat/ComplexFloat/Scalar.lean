@@ -25,6 +25,8 @@ which call `exp` and `log`.
   doi:10.1145/3428446; preprint arXiv:1904.09481.
 * [FreeBSD] FreeBSD msun library: `lib/msun/src/k_exp.c` (`__ldexp_cexp`) and
   `lib/msun/src/s_ctanh.c`.
+* [Knuth1997] D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical
+  Algorithms*, 3rd ed., Addison-Wesley, 1997.
 * [Goldberg1991] D. Goldberg, *What Every Computer Scientist Should Know About
   Floating-Point Arithmetic*, ACM Computing Surveys 23 (1991), no. 1, 5–48, Theorem 4.
 -/
@@ -76,6 +78,37 @@ The rounding error `p q - fl(p q)` of a product, computed exactly with a fused m
 `p q` neither underflows nor overflows. It is infinite or NaN when `p q` overflows.
 -/
 @[expose] public def mulErr (p q : Float) : Float := fma p q (-(p * q))
+
+/--
+`(s, e)` with `s = fl(a + b)` and `s + e = a + b` exactly, when nothing overflows: the TwoSum
+algorithm of [Knuth1997, §4.2.2, Theorem B], which needs no comparison of `a` and `b`.
+-/
+@[expose] public def twoSum (a b : Float) : Float × Float :=
+  let s := a + b
+  let b' := s - a
+  let a' := s - b'
+  (s, (a - a') + (b - b'))
+
+/--
+`a * a + b * b - 1` for `|b| ≤ |a|`, accurate also when the result is much smaller than `1`: the
+squares are split exactly with `mulErr`, and the five terms are added with `twoSum`, keeping
+their rounding errors.
+-/
+@[expose] public def sqSumSubOne (a b : Float) : Float :=
+  let aa := a * a
+  let bb := b * b
+  let (s₀, e₀) := twoSum aa (-1)
+  let (s₁, e₁) := twoSum s₀ bb
+  let (s₂, e₂) := twoSum s₁ (mulErr a a)
+  let (s₃, e₃) := twoSum s₂ (mulErr b b)
+  s₃ + (e₀ + e₁ + e₂ + e₃)
+
+/-- `asinh (q * 2 ^ k)`, also when `q * 2 ^ k` overflows: then `asinh` of it is
+`± (log |q| + (k + 1) log 2)` to within rounding. -/
+public def asinhLdexp (q : Float) (k : Nat) : Float :=
+  let r := ldexp q k
+  if r.isFinite then asinh r
+  else copySign (log q.abs + (k + 1 : Nat).toFloat * 0.6931471805599453) q
 
 /--
 `sqrt (a * a + b * b)` for `a ≥ b ≥ 0` in a range where the squares neither overflow nor

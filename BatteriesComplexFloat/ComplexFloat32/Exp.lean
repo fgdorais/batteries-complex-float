@@ -46,8 +46,8 @@ public protected def exp (z : ComplexFloat32) : ComplexFloat32 :=
 
 /--
 The principal logarithm, with branch cut along the negative real axis and the special values
-of [C17, G.6.3.2]. The real part is `log |z|`, computed as `log1p ((a - 1) * (a + 1) + b * b) / 2`
-near the unit circle, by the identity `a² + b² = 1 + (a - 1) (a + 1) + b²`, and after scaling
+of [C17, G.6.3.2]. The real part is `log |z|`, computed as `log1p (a² + b² - 1) / 2`
+near the unit circle, with `a² + b² - 1` computed accurately by `sqSumSubOne`, and after scaling
 by `2 ^ 90` for tiny `|z|`. The imaginary part is `atan2 im re`.
 -/
 public protected def log (z : ComplexFloat32) : ComplexFloat32 :=
@@ -62,11 +62,14 @@ public protected def log (z : ComplexFloat32) : ComplexFloat32 :=
       if a == 0 then -Float32.inf
       else if 0.5 ≤ a && a ≤ 2 then
         -- Near the unit circle, `log (a² + b²) / 2` loses accuracy.
-        0.5 * Float32.log1p ((a - 1) * (a + 1) + b * b)
+        0.5 * Float32.log1p (Float32.sqSumSubOne a b)
       else if a < Float32.twoPow (-50) then
         -- Scale up so that `hypot a b` is not subnormal.
         Float32.log (Float32.hypot (a * Float32.twoPow 90) (b * Float32.twoPow 90))
           - 62.383246250395075
+      else if a > Float32.twoPow 124 then
+        -- Scale down so that `hypot a b` does not overflow.
+        Float32.log (Float32.hypot (a * 0.25) (b * 0.25)) + 1.3862943611198906
       else Float32.log (Float32.hypot a b)
   ⟨re, Float32.atan2 y x⟩
 
@@ -116,7 +119,7 @@ where
     if _ : n = 0 then acc
     else loop (b * b) (n / 2) (if n % 2 = 1 then acc * b else acc)
   termination_by n
-  decreasing_by omega
+  decreasing_by lia
 
 public instance : HPow ComplexFloat32 Nat ComplexFloat32 := ⟨npow⟩
 public instance : HPow ComplexFloat32 ComplexFloat32 ComplexFloat32 := ⟨ComplexFloat32.pow⟩

@@ -17,6 +17,11 @@ lean_lib BatteriesComplexFloatNative
 lean_exe compare where
   root := `Compare.ComplexFloat
 
+/-- Measures the accuracy of the pure Lean functions and the C library's against
+higher-precision references. -/
+lean_exe accuracy where
+  root := `Accuracy
+
 /-- Compares the pure Lean `ComplexFloat32` functions with the C library. -/
 lean_exe compare32 where
   root := `Compare.ComplexFloat32
