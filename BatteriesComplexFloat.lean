@@ -1,5 +1,6 @@
 module
 
+public import BatteriesComplexFloat.Array
 public import BatteriesComplexFloat.Basic
 public import BatteriesComplexFloat.Exp
 public import BatteriesComplexFloat.Float

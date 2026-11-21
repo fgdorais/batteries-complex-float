@@ -1,9 +1,12 @@
 # Batteries Complex Float
 
 Complex floating-point numbers for Lean 4: `ComplexFloat`, a pair of `Float`s with the
-semantics of C's `double complex` under Annex G of the C standard. This is a Batteries cell: it
-builds against [Batteries](https://github.com/leanprover-community/batteries) `main` (and
-`nightly-testing` on the `nightly-testing` branch), and can be imported together with it.
+semantics of C's `double complex` under Annex G of the C standard, and its single-precision twin
+`ComplexFloat32`. This is a Batteries cell: it builds against
+[Batteries](https://github.com/leanprover-community/batteries) `main` (and `nightly-testing` on
+the `nightly-testing` branch), and can be imported together with it. For now, `main` requires
+the Batteries branch `float-utils`, whose `Float.signBit`, `Float.copySign` and `fma_comm` it
+uses; it goes back to Batteries `main` once that branch is merged.
 
 ```toml
 [[require]]
@@ -20,8 +23,13 @@ rev = "main"
 - `exp`, `log`, `sqrt`, `pow` (also as `^` with `ComplexFloat`, `Float` and `Nat` exponents).
 - `sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh` and their inverses `asin`, `acos`, `atan`,
   `asinh`, `acosh`, `atanh`.
-- Scalar helpers on `Float` that core lacks: `signBit`, `copySign`, `exponent?`, `ldexp`,
-  `hypot`, `log1p`.
+- `ComplexFloat32`, with all of the above on `Float32` parts: the same algorithms, with
+  single-precision thresholds and constants.
+- `ComplexFloatArray`, an unboxed array of complex numbers with interleaved real and imaginary
+  parts in a `FloatArray` (the layout of C's `double complex` arrays), with indexing, `push`,
+  `set`, `map`, `foldl`, `for` loops and conversions to and from `Array` and `List`.
+- Scalar helpers on `Float` and `Float32` that core lacks: `exponent?`, `ldexp`, `mulErr` (the
+  exact rounding error of a product, by `fma`), `hypot`, `log1p`.
 
 ## Semantics
 
@@ -67,7 +75,8 @@ Each module lists its references, and each docstring cites the ones its algorith
   Computing Surveys 23 (1991), no. 1, 5–48.
 - D. E. Knuth, *The Art of Computer Programming, Volume 2: Seminumerical Algorithms*, 3rd ed.,
   Addison-Wesley, 1997, §4.6.3.
-- FreeBSD msun (`k_exp.c`, `s_ctanh.c`) and musl libc (`scalbn.c`).
+- FreeBSD msun (`k_exp.c`, `k_expf.c`, `s_ctanh.c`, `s_ctanhf.c`) and musl libc (`scalbn.c`,
+  `scalbnf.c`).
 
 ## Proofs
 
@@ -77,11 +86,12 @@ this library, including `ldexp`, `exponent?`, `hypot`, `*` and `/`, is written w
 operations only and is exposed, so it can be reasoned about. The other functions are not
 exposed.
 
-- The cell imports two Batteries modules: `Batteries.Data.Float.Basic` (for `Float.pi`) and
+- The cell imports three Batteries modules: `Batteries.Data.Float.Basic` (for `Float.pi`),
+  `Batteries.Data.Float.Bits` (for `signBit` and `copySign`) and
   `Batteries.Data.Float.Lemmas.Arithmetic`, which proves `neg_neg`, `neg_mul`, `mul_neg`,
-  `neg_div`, `div_neg`, `mul_comm` and `add_comm` through the model.
-- `BatteriesComplexFloat.Lemmas.Basic` proves `ext`, `conj_conj`, `neg_neg`, `conj_neg` and
-  `mul_comm` for `ComplexFloat`.
+  `neg_div`, `div_neg`, `mul_comm`, `add_comm` and `fma_comm` through the model.
+- `BatteriesComplexFloat.Lemmas.Basic` and `Lemmas.Basic32` prove `ext`, `conj_conj`,
+  `neg_neg`, `conj_neg` and `mul_comm` for `ComplexFloat` and `ComplexFloat32`.
 - `BatteriesComplexFloat.Lemmas.SpecialValues` proves Annex G special values of `*`, `/`, `abs`
   and `proj` by evaluating the model in the kernel (`decide +kernel`), and that
   `conj (z * w) = conj z * conj w` fails on a sign of zero.
@@ -93,7 +103,8 @@ and `*`.
 ## Native package and testing
 
 The `native` directory holds a separate package, `batteries-complex-float-native`, with bindings
-to the C library's `<complex.h>` (`ComplexFloat.Native.exp` and so on). It needs a system C
+to the C library's `<complex.h>` (`ComplexFloat.Native.exp`, `ComplexFloat32.Native.exp` and
+so on). It needs a system C
 compiler with `<complex.h>`, since the compiler bundled with Lean has none. Its `compare`
 executable checks the pure Lean functions against the C library on a grid of special inputs
 (signed zeros, infinities, NaN, tiny and huge numbers) and on random inputs. It reports many
@@ -104,8 +115,13 @@ accurate formulas, and from the sign of a part of a quotient that underflows to 
 cd native && lake build compare && .lake/build/bin/compare 50000
 ```
 
-The test library `BatteriesComplexFloatTest` checks Annex G special values with `#guard` and is
-built by CI.
+The `compare32` executable does the same for `ComplexFloat32` against the `float complex`
+functions.
+
+The test library `BatteriesComplexFloatTest` is built by CI. It checks Annex G special values
+with `#guard`, in both precisions, and checks multiplication and division against exact
+rational arithmetic: each part of a product within 1 ulp and of a quotient within 3 ulps of the
+exact result, on random inputs over the whole exponent range and on inputs with cancellation.
 
 ## Branches and workflows
 

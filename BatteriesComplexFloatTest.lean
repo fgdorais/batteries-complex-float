@@ -2,3 +2,4 @@ import BatteriesComplexFloatTest.SpecialValues
 import BatteriesComplexFloatTest.Accuracy
 import BatteriesComplexFloatTest.SpecialValues32
 import BatteriesComplexFloatTest.Accuracy32
+import BatteriesComplexFloatTest.Array
