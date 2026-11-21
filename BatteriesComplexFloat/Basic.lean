@@ -113,12 +113,6 @@ Signs are kept throughout.
     ⟨zero z.re, zero z.im⟩
 
 /--
-The rounding error `p q - fl(p q)` of a product, computed exactly with a fused multiply-add when
-`p q` neither underflows nor overflows. It is infinite or NaN when `p q` overflows.
--/
-@[expose] public def mulErr (p q : Float) : Float := Float.fma p q (-(p * q))
-
-/--
 `p * q + r * s` with an error of at most two units in the last place, by Kahan's algorithm with
 fused multiply-adds [JeannerodLouvetMuller2013a]: the rounding error of `r * s` is recovered
 exactly with an `fma` and subtracted at the end. Unlike `p * q + r * s`, it stays accurate when
@@ -132,9 +126,9 @@ the two products nearly cancel.
 /--
 Multiplication, as in the reference implementation `_Cmultd` of [C17, G.5.1, Example 1]: the
 textbook formula, then recovery of infinite results when both parts come out NaN. Unlike
-`_Cmultd`, the rounding errors of the four products are recovered with `mulErr` and added back,
-which keeps each part of the result within a few units in the last place of the exact product
-even when the two products in it nearly cancel. This is the idea of Kahan's algorithm in
+`_Cmultd`, the rounding errors of the four products are recovered with `Float.mulErr` and added
+back, which keeps each part of the result within a few units in the last place of the exact
+product even when the two products in it nearly cancel. This is the idea of Kahan's algorithm in
 `dotFma`, with both errors recovered so that multiplication stays commutative. When an
 operand is infinite or an intermediate product overflows, both operands go through `recoverInf`
 and the textbook formula is applied again and multiplied by `inf`. This is a symmetric
@@ -146,8 +140,8 @@ rearrangement of the case analysis in `_Cmultd`, which gives the same results.
   -- its product overflows, and then the textbook formula stands, as in C. A zero error is
   -- skipped, so that signs of zeros are as in the textbook formula.
   let fix (u e : Float) : Float := if e.isFinite && e != 0 then u + e else u
-  let x := fix (a * c - b * d) (mulErr a c - mulErr b d)
-  let y := fix (a * d + b * c) (mulErr a d + mulErr b c)
+  let x := fix (a * c - b * d) (Float.mulErr a c - Float.mulErr b d)
+  let y := fix (a * d + b * c) (Float.mulErr a d + Float.mulErr b c)
   if x.isNaN && y.isNaN then
     let overflow := (z.re * w.re).isInf || (z.im * w.im).isInf || (z.re * w.im).isInf
       || (z.im * w.re).isInf

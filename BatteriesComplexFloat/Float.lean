@@ -72,6 +72,12 @@ are those of [musl].
   else x * twoPow n
 
 /--
+The rounding error `p q - fl(p q)` of a product, computed exactly with a fused multiply-add when
+`p q` neither underflows nor overflows. It is infinite or NaN when `p q` overflows.
+-/
+@[expose] public def mulErr (p q : Float) : Float := fma p q (-(p * q))
+
+/--
 `sqrt (a * a + b * b)` for `a ≥ b ≥ 0` in a range where the squares neither overflow nor
 underflow, with the fused multiply-add correction step of [Borges2020], which makes the result
 correctly rounded in almost all cases.
@@ -80,7 +86,7 @@ correctly rounded in almost all cases.
   let h := sqrt (fma a a (b * b))
   let hh := h * h
   let aa := a * a
-  let x := fma (-b) b (hh - aa) + fma h h (-hh) - fma a a (-aa)
+  let x := fma (-b) b (hh - aa) + mulErr h h - mulErr a a
   h - x / (2 * h)
 
 /--

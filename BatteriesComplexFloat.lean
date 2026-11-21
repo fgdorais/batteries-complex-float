@@ -1,9 +1,16 @@
 module
 
+public import BatteriesComplexFloat.Array
 public import BatteriesComplexFloat.Basic
 public import BatteriesComplexFloat.Exp
 public import BatteriesComplexFloat.Float
+public import BatteriesComplexFloat.Float32
+public import BatteriesComplexFloat.Float32.Basic
+public import BatteriesComplexFloat.Float32.Exp
+public import BatteriesComplexFloat.Float32.Inverse
+public import BatteriesComplexFloat.Float32.Trig
 public import BatteriesComplexFloat.Inverse
 public import BatteriesComplexFloat.Lemmas.Basic
+public import BatteriesComplexFloat.Lemmas.Basic32
 public import BatteriesComplexFloat.Lemmas.SpecialValues
 public import BatteriesComplexFloat.Trig
