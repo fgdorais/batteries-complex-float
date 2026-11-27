@@ -5,10 +5,7 @@ Complex floating-point numbers for Lean 4, in two precisions: `ComplexFloat`, a 
 `ComplexFloat32`, a pair of `Float32`s with the semantics of C's `float complex`. This is a
 Batteries cell: it builds against
 [Batteries](https://github.com/leanprover-community/batteries) `main` (and `nightly-testing` on
-the `nightly-testing` branch), and can be imported together with it. For now, `main` is pinned
-to a Batteries commit (37a0a4a) that has both `Float.signBit` and `Float.copySign` (from
-batteries#2076) and `fma_comm` (from its own PR); it goes back to Batteries `main` once both are
-merged.
+the `nightly-testing` branch), and can be imported together with it.
 
 ```toml
 [[require]]
